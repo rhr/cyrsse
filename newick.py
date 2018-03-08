@@ -104,7 +104,6 @@ def parse(data, ttable=None, treename=None):
             newnode = Node()
             newnode.ni = ni
             ni += 1
-            print(newnode, ni)
             ## newnode.treename = treename
             if node:
                 node.add_child(newnode)
