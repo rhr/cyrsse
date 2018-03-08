@@ -18,10 +18,20 @@ cdef class Node(object):
     cdef public Node parent, leftchild, rightsib
     cdef public str label
     cdef public Tree tree
-    cdef public readonly nchildren
+    cdef readonly int nchildren
     
     def __cinit__(self):
-        self.length = np.nan
+        self.nchildren = 0
+
+    def __repr__(self):
+        v = [str(self.ni)]
+        if self.label:
+            v.append(self.label)
+        if self.isroot:
+            v.append('root')
+        if self.isleaf:
+            v.append('leaf')
+        return 'Node({})'.format(', '.join(v))
 
     @property
     def isleaf(self):
@@ -33,12 +43,16 @@ cdef class Node(object):
 
     @property
     def children(self):
-        return list(self.iterchildren())
+        return self.iterchildren()
 
-    ## @property
-    ## def leaves(self):
-    ##     pass
-    
+    @property
+    def leaves(self):
+        cdef Node c, n
+        for c in self.children:
+            for n in c:
+                if n.isleaf:
+                    yield n
+
     def __iter__(self):
         return self.iternodes()
         
@@ -48,36 +62,31 @@ cdef class Node(object):
             self.leftchild = n
         else:
             c = self.leftchild
-            while c.rightsib is not None: c = c.rightsib
+            while c.rightsib is not None:
+                c = c.rightsib
             c.rightsib = n
-            n.leftsib = c
         n.parent = self
         self.nchildren += 1
 
+    cpdef remove_child(self, Node n):
+        cdef Node c
+        if n is self.leftchild:
+            self.leftchild = n.rightsib
+        else:
+            c = self.leftchild
+            while c.rightsib is not n:
+                c = c.rightsib
+                assert c
+            c.rightsib = n.rightsib
+        n.rightsib = None
+        n.parent = None
+        self.nchildren -= 1
+
     cpdef Node prune(self):
-        cdef Node p = self.parent, lsib = self.leftsib, rsib = self.rightsib
-        if p is not None:
-            if lsib is None and rsib is None:
-                # self is the only child of parent
-                self.parent = None
-                return p
-            if lsib is None and rsib is not None:
-                # self is the first child of parent
-                p.leftchild = rsib
-                rsib.leftsib = None
-            elif lsib is not None and rsib is None:
-                # self is the last child of parent
-                lsib.rightsib = None
-            elif lsib is not None and rsib is not None:
-                # self has both left and right sibs
-                lsib.rightsib = rsib
-                rsib.leftsib = lsib
-            else:
-                pass
-            p.nchildren -= 1
-        self.parent = None
-        self.leftsib = None
-        self.rightsib = None
+        cdef Node p = self.parent
+        if p is None:
+            return
+        p.remove_child(self)
         return p
         
     def iterchildren(self):
