@@ -132,14 +132,22 @@ cdef class Tree(object):
     as arrays.
     """
     cdef Node root
+    cdef Py_ssize_t[:] parent, leftchild, rightsib, postorder, postith
+    cdef np.int[:] nchildren
+    cdef double[:] length
+    cdef int nnodes, nleaves
+
     def __cinit__(self, Node root):
         # allocate attribute storage
         self.root = None
-        cdef int i = 0
+        cdef int i = 0, lvs = 0
         cdef Node n
         for n in root.iternodes():
             i += 1
+            if n.isleaf:
+                lvs += 1
         self.nnodes = i
+        self.nleaves = lvs
         self.parent = np.empty(self.nnodes, dtype=np.intp)
         self.leftchild = np.empty(self.nnodes, dtype=np.intp)
         self.rightsib = np.empty(self.nnodes, dtype=np.intp)
@@ -150,13 +158,13 @@ cdef class Tree(object):
         self.label = []
         self.index(root)
 
-    @property
-    def nleaves(self):
-        cdef int n = 0
-        for i in range(self.nnodes):
-            if self.nchildren[i] == 0:
-                n += 1
-        return n
+    ## @property
+    ## def nleaves(self):
+    ##     cdef int n = 0
+    ##     for i in range(self.nnodes):
+    ##         if self.nchildren[i] == 0:
+    ##             n += 1
+    ##     return n
 
     cpdef index(self, root=None):
         "call on __cinit__, or when topology changes but no. nodes is the same"
