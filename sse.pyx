@@ -627,3 +627,20 @@ def make_blank_lambda(k,fill=1):
                 if j<=l:
                     lambdaidx[i,j,l] = fill
     return lambdaidx
+
+def test():
+    import pandas as pd
+    from enum import IntEnum
+    import newick
+
+    root = newick.parse(open('psychotria.newick').read())
+
+    areas = tuple('KOMH')
+    states = IntEnum('states', ['K', 'KO', 'O', 'OM', 'M', 'MH', 'H'], start=0)
+    nstates = len(states)
+
+    lamv = [ [states[c]]*3 for c in areas ]
+    lamv.extend([ 
+    
+
+    lambda_ijk = pd.DataFrame.from_records
